@@ -20,9 +20,21 @@ from gee import gee
 
 # Initialize the Earth Engine library
 ee.Initialize()
+ee.Initialize(project='name of project')
 ```
 
-### 2. Define the Area of Interest (AOI)
+
+### 2. Clone form github
+
+This code can only be used in Google Colab
+
+```python
+!git clone https://github.com/parvvaresh/google-earth-engine
+%cd google-earth-engine
+
+from get_data.gee import gee
+```
+### 3. Define the Area of Interest (AOI)
 
 You need to define your area of interest (AOI) as an `ee.Geometry`. For example, to define a rectangular AOI:
 
@@ -30,7 +42,7 @@ You need to define your area of interest (AOI) as an `ee.Geometry`. For example,
 aoi = ee.Geometry.Rectangle([xmin, ymin, xmax, ymax])
 ```
 
-### 3. Create an Instance of the `gee` Class
+### 4. Create an Instance of the `gee` Class
 
 ```python
 gee_instance = gee(aoi)
@@ -38,7 +50,7 @@ gee_instance = gee(aoi)
 
 Optionally, you can provide a `table_clip` parameter if you want to clip the results to a specific geometry.
 
-### 4. Run the Data Pipeline
+### 5. Run the Data Pipeline
 
 Call the `pipeline_data` method with the required parameters to process and export the data:
 
@@ -59,6 +71,13 @@ from gee import gee
 
 # Initialize the Earth Engine library
 ee.Initialize()
+ee.Initialize(project='name of project')
+
+
+!git clone https://github.com/parvvaresh/google-earth-engine
+%cd google-earth-engine
+
+from get_data.gee import gee
 
 # Define your AOI (example coordinates)
 aoi = ee.Geometry.Rectangle([-10, 35, 10, 45])
