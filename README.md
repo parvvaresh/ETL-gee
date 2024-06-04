@@ -1,4 +1,6 @@
-# Gee get data
+# Google Earth Engine
+
+# 1. Get Data
 
 ## Overview
 
@@ -128,6 +130,9 @@ Runs the entire data pipeline, from loading and processing Sentinel-1 and Sentin
 
 - Ensure that you have sufficient permissions and quota in your Google Earth Engine account to run the processing tasks.
 - The export task may take some time depending on the size of the AOI and the date range specified.
+
+
+# 2. Convert to csv
 
 ## License
 
