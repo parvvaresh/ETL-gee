@@ -1,6 +1,6 @@
 import ee
 
-def _load_Sentinel2(aoi: ee.Geometry,
+def extract_Sentinel2(aoi: ee.Geometry,
                     start_date: str,
                     end_date: str,
                     cloudy_pixel: int) -> None:
