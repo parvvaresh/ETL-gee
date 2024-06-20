@@ -13,7 +13,7 @@ def Extract(aoi: ee.Geometry,
   start_date,
   end_date)
 
-  sentinel2 = extract_Sentinel1(
+  sentinel2 = extract_Sentinel2(
   aoi ,
   start_date,
   end_date,
