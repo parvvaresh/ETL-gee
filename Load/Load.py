@@ -1,4 +1,4 @@
-from save_csv import save_csv
+from .save_csv import save_csv
 
 
 def Load(reduced_image,

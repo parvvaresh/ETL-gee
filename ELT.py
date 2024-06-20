@@ -1,8 +1,9 @@
-import ee
 
 from Extract.Extract import Extract
 from Transform.Transform import Transform
 from Load.Load import Load
+
+import ee
 
 def gee(aoi : ee.Geometry,
         table_clip : ee.Geometry,
