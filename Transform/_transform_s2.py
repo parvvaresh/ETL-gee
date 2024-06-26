@@ -16,7 +16,7 @@ def transform_sentinel2(aoi : ee.Geometry,
     return composite.clip(aoi).set('system:time_start', date.millis())
 
   SENTINEL2_10DAY = ee.ImageCollection.fromImages(dates.map(make_sentinel2_composite))
-  filtered_collection = SENTINEL2_10DAY.filter(ee.Filter.listContains('system:band_names', 'B2'))
+  #filtered_collection = SENTINEL2_10DAY.filter(ee.Filter.listContains('system:band_names', 'B2'))
 
   def calculate_indices_and_clip(image):
 
@@ -34,5 +34,5 @@ def transform_sentinel2(aoi : ee.Geometry,
     indices_image = ee.Image.cat([ndvi, evi, savi])
     return indices_image.clip(aoi).copyProperties(image, image.propertyNames())
 
-  indices_image = filtered_collection.map(calculate_indices_and_clip).toBands()
+  indices_image = SENTINEL2_10DAY.map(calculate_indices_and_clip).toBands()
   return indices_image

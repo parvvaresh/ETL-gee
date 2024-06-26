@@ -2,8 +2,8 @@ import ee
 import time
 
 def save_csv(reduced_image,
-         name_file: str,
-         name_folder: str):
+             name_file: str,
+             name_folder: str):
 
   if not reduced_image.getInfo():
     raise ValueError("Reduced image dictionary is empty. Nothing to export.")
