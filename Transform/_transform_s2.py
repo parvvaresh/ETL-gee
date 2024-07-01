@@ -67,10 +67,10 @@ def transform_sentinel2(aoi : ee.Geometry,
       return image.addBands(lst)
 
     def addSlope(image : ee.ImageCollection):
-      gmted = ee.Image('USGS/GMTED2010_FULL') \
+      _gmted = ee.Image('USGS/GMTED2010_FULL') \
                 .clip(aoi) \
                 .select('mea')
-      slope = ee.Terrain.slope(gmted)
+      slope = ee.Terrain.slope(_gmted)
       return image.addBands(slope)
 
 
