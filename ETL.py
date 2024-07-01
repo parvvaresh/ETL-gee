@@ -17,8 +17,7 @@ def gee(aoi : ee.Geometry,
 
     sentinel1  = Extract(aoi,
          start_date,
-         end_date,
-         cloudy_pixel)
+         end_date)
 
     print("Extracted Sentinel-1 and Sentinel-2 data.")
 
