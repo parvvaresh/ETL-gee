@@ -1,7 +1,6 @@
 import ee
 
 def combine_sentinel1_sentinel2(aoi,
-                                table_clip,
                                 indices_image ,
                                 stack_sentinel1):
   stack_sentinel1_SENTINEL2_INDEXES = stack_sentinel1.addBands(indices_image)
