@@ -24,4 +24,7 @@ def transform_sentinel1(sentinel1: ee.ImageCollection) -> ee.Image:
                     .addBands(mosaic_by_date(vvIwDesc).toBands()) \
                     .addBands(mosaic_by_date(vhIwDesc).toBands())
 
+
+
+
   return stack_sentinel1
