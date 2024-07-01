@@ -1,7 +1,7 @@
 import ee
 
 def transform_sentinel2(aoi : ee.Geometry,
-                        extract_Sentinel2 : ee.ImageCollection,
+                        extract_Sentinel2,
                         interval : int,
                         start_date : str,
                         end_date : str,
