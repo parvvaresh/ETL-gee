@@ -7,10 +7,12 @@ def transform_sentinel2(aoi : ee.Geometry,
                         end_date : str,
                         cloudy_pixel : int) -> ee.Image:
 
+
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
 
     def calculate_interval_mean(start, interval):
+
         end = start.advance(interval, 'day')
         filtered = extract_Sentinel2(aoi, start_date, end_date, cloudy_pixel)
 
