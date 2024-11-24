@@ -1,5 +1,5 @@
 import ee
-from calculate_interval_mean import *
+from .calculate_interval_mean import *
 
 def transform_sentinel2(aoi: ee.Geometry, start_date: str, end_date: str, interval_days: int, collectionS2: ee.ImageCollection, collectionS1: ee.ImageCollection) -> ee.ImageCollection:
     """
