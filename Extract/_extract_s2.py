@@ -1,8 +1,5 @@
 import ee
 
-
-import ee
-
 def s2_clear_sky(image: ee.Image) -> ee.Image:
     """
     Masks clear sky pixels in a Sentinel-2 image using the SCL band.
