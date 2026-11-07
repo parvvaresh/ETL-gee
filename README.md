@@ -1,141 +1,132 @@
-# Google Earth Engine
+# ETL-gee
 
-# 1. Get Data
+An Extract → Transform → Load pipeline on Google Earth Engine (GEE). It builds a time-series
+feature stack from **Sentinel-2**, **Sentinel-1**, terrain (GMTED2010) and **MODIS LST** for an
+area of interest and exports it to Google Drive as one multi-band GeoTIFF.
 
-## Overview
+```
+Extract ──────────────────────► Transform ─────────────────────────► Load
+Sentinel-2 (clear-sky mask)     one image per `interval` days:        Export.image.toDrive
+Sentinel-1 (IW, VV + VH)        S2 mean, S1 mean, indices,            → <folder>/<name>.tif
+                                terrain, MODIS → stacked into 1 image
+```
 
-The `gee` library is a Python package designed for processing and analyzing Sentinel-1 and Sentinel-2 satellite imagery using Google Earth Engine (GEE). It allows for the loading, processing, and combining of Sentinel-1 and Sentinel-2 data, as well as the calculation of various vegetation indices. Additionally, it supports exporting the processed data to Google Drive.
+## Project structure
+
+```
+ETL.py                            # gee(): runs Extract -> Transform -> Load
+Extract/
+  Extract.py                      # extract(): returns {"Sentinel2": ..., "Sentinel1": ...}
+  _extract_s2.py                  # Sentinel-2 SR Harmonized + SCL clear-sky mask
+  _extract_s1.py                  # Sentinel-1 GRD (IW, VV/VH)
+Transform/
+  Transform.py                    # transform(): splits the period into intervals and stacks them
+  calculate_interval_mean.py      # features for a single interval
+Load/
+  Load.py                         # load(): exports to Google Drive and waits for the task
+```
 
 ## Installation
 
-Before using the `gee` library, you need to set up the Google Earth Engine Python API. Follow the official installation guide [here](https://developers.google.com/earth-engine/guides/python_install).
+```bash
+git clone https://github.com/parvvaresh/ETL-gee
+cd ETL-gee
+pip install -r requirements.txt
+```
+
+You need a Google Cloud project with the Earth Engine API enabled. See the
+[official guide](https://developers.google.com/earth-engine/guides/python_install).
+
+### Google Colab
+
+```python
+!git clone https://github.com/parvvaresh/ETL-gee
+%cd ETL-gee
+```
 
 ## Usage
 
-Here's a step-by-step guide on how to use the `gee` library.
-
-### 1. Import the Library
+Run the code from the repository root, so that `Extract`, `Transform` and `Load` can be imported.
 
 ```python
 import ee
-from gee import gee
 
-# Initialize the Earth Engine library
-ee.Initialize()
-ee.Initialize(project='name of project')
-```
+ee.Authenticate()                       # only needed once per environment
+ee.Initialize(project='your-gcp-project-id')
 
+from ETL import gee
 
-### 2. Clone form github
+aoi = ee.Geometry.Rectangle([51.30, 35.60, 51.45, 35.75])   # [xmin, ymin, xmax, ymax]
 
-This code can only be used in Google Colab
-
-```python
-!git clone https://github.com/parvvaresh/google-earth-engine
-%cd google-earth-engine
-
-from get_data.gee import gee
-```
-### 3. Define the Area of Interest (AOI)
-
-You need to define your area of interest (AOI) as an `ee.Geometry`. For example, to define a rectangular AOI:
-
-```python
-aoi = ee.Geometry.Rectangle([xmin, ymin, xmax, ymax])
-```
-
-### 4. Create an Instance of the `gee` Class
-
-```python
-gee_instance = gee(aoi)
-```
-
-Optionally, you can provide a `table_clip` parameter if you want to clip the results to a specific geometry.
-
-### 5. Run the Data Pipeline
-
-Call the `pipeline_data` method with the required parameters to process and export the data:
-
-```python
-gee_instance.pipeline_data(
-    start_date='YYYY-MM-DD',  # Start date of the data collection period
-    end_date='YYYY-MM-DD',    # End date of the data collection period
-    name_file='exported_data',  # Name of the exported file
-    name_folder='GEE_exports'  # Name of the folder in Google Drive where the file will be saved
-)
-```
-
-### Example Usage
-
-```python
-import ee
-from gee import gee
-
-# Initialize the Earth Engine library
-ee.Initialize()
-ee.Initialize(project='name of project')
-
-
-!git clone https://github.com/parvvaresh/google-earth-engine
-%cd google-earth-engine
-
-from get_data.gee import gee
-
-# Define your AOI (example coordinates)
-aoi = ee.Geometry.Rectangle([-10, 35, 10, 45])
-
-# Create an instance of the gee class
-gee_instance = gee(aoi)
-
-# Run the data pipeline
-gee_instance.pipeline_data(
-    start_date='2023-01-01',
-    end_date='2023-01-31',
+gee(
+    aoi=aoi,
+    start_date='2023-01-01',   # inclusive
+    end_date='2023-01-31',     # exclusive
+    cloudy_pixel=20,           # keep Sentinel-2 scenes with CLOUDY_PIXEL_PERCENTAGE < 20
+    interval=10,               # aggregate every 10 days -> 3 intervals
     name_file='sentinel_data',
-    name_folder='GEE_exports'
+    name_folder='GEE_exports',
 )
 ```
 
-## Methods
+The result is written to `Google Drive/GEE_exports/sentinel_data.tif`.
 
-### `_load_Sentinel1(self, start_date: str, end_date: str) -> None`
+### Parameters of `gee()`
 
-Loads the Sentinel-1 ImageCollection within the specified date range and AOI.
+| Parameter      | Type          | Description |
+|----------------|---------------|-------------|
+| `aoi`          | `ee.Geometry` | Area of interest; also the export region. |
+| `start_date`   | `str`         | `YYYY-MM-DD`, inclusive. |
+| `end_date`     | `str`         | `YYYY-MM-DD`, exclusive. |
+| `cloudy_pixel` | `int`         | Maximum `CLOUDY_PIXEL_PERCENTAGE` (0–100) for Sentinel-2 scenes. |
+| `interval`     | `int`         | Interval length in days. The period is split into `floor(days / interval)` intervals; a trailing partial interval is dropped. |
+| `name_file`    | `str`         | Export task name and output file name. |
+| `name_folder`  | `str`         | Google Drive folder. |
+| `scale`        | `int`         | Export pixel size in metres (default `10`). |
+| `wait`         | `bool`        | If `True` (default), block until the export finishes and raise if it fails. If `False`, return the started task immediately. |
 
-### `_process_Sentinel1(self) -> None`
+`gee()` returns the `ee.batch.Task` of the export.
 
-Processes the loaded Sentinel-1 data, including filtering and creating mosaics based on ascending and descending orbit passes.
+### Running the stages separately
 
-### `_load_Sentinel2(self, start_date: str, end_date: str, cloudy_pixel: int) -> None`
+```python
+from Extract.Extract import extract
+from Transform.Transform import transform
+from Load.Load import load
 
-Loads the Sentinel-2 ImageCollection within the specified date range, AOI, and cloud cover percentage.
+collections = extract(aoi, '2023-01-01', '2023-01-31', cloudy_pixel=20)
+image = transform(aoi, '2023-01-01', '2023-01-31', 10,
+                  collections['Sentinel2'], collections['Sentinel1'])
+print(image.bandNames().getInfo())     # check the output before exporting
+task = load(image, aoi, 'sentinel_data', 'GEE_exports', wait=False)
+```
 
-### `_process_Sentinel2(self, interval: int, start_date: str, end_date: str) -> None`
+## Output bands
 
-Processes the loaded Sentinel-2 data, creating composites at specified intervals and calculating NDVI, EVI, and SAVI indices.
+Each interval adds these 26 bands. Every band name starts with the interval's start date,
+e.g. `20230101_NDVI`, `20230111_VV`.
 
-### `_combine_sentinel1_sentinel2(self) -> None`
+| Group | Bands | Source / notes |
+|-------|-------|----------------|
+| Sentinel-2 reflectance (mean, 0–1) | `B1 B2 B3 B4 B5 B6 B7 B8 B8A B9 B11 B12` | `COPERNICUS/S2_SR_HARMONIZED`; only SCL classes 4, 5, 6, 11 (vegetation, bare soil, water, snow) are kept |
+| Sentinel-1 backscatter (mean, dB) | `VV VH` | `COPERNICUS/S1_GRD`; IW mode, only scenes that contain both VV and VH |
+| Spectral indices | `NDVI EVI SAVI BSI` | Computed from the Sentinel-2 mean |
+| Terrain | `mea min max slope` | `USGS/GMTED2010_FULL` elevation (m) and slope (degrees) |
+| MODIS (median) | `Emis_32 Emis_31 LST_Day_1km LST_Night_1km` | `MODIS/061/MOD11A1`; emissivity is unitless, LST is in Kelvin |
 
-Combines the processed Sentinel-1 and Sentinel-2 data into a single dataset and clips it if a `table_clip` is provided.
+If a sensor has no images in an interval, that interval's bands are masked (no data); the
+pipeline does not fail.
 
-### `_export_data(self, name_file: str, name_folder: str) -> None`
-
-Exports the processed and combined data to Google Drive as a CSV file.
-
-### `pipeline_data(self, start_date: str, end_date: str, name_file: str, name_folder: str) -> None`
-
-Runs the entire data pipeline, from loading and processing Sentinel-1 and Sentinel-2 data to exporting the results.
+All bands are exported as `float32`.
 
 ## Notes
 
-- Ensure that you have sufficient permissions and quota in your Google Earth Engine account to run the processing tasks.
-- The export task may take some time depending on the size of the AOI and the date range specified.
-
-
-# 2. Convert to csv
+- Extraction raises `ValueError` if the whole period has no Sentinel-2 or no Sentinel-1 images
+  for the AOI (for Sentinel-2, try a higher `cloudy_pixel`).
+- Exports at 10 m over large areas or long periods produce big files and can take a long time.
+  Increase `scale` or shrink the AOI if the task is too slow or hits quota limits.
+- Coarser sources (GMTED ~250 m, MODIS 1 km) are resampled to the export `scale`.
 
 ## License
 
-This code is provided under the MIT License. Feel free to use and modify it as needed.
-
----
+MIT
