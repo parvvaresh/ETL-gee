@@ -1,40 +1,36 @@
 import ee
 
+# Polarisation bands kept from Sentinel-1.
+S1_BANDS = ['VV', 'VH']
+
 
 def extract_Sentinel1(aoi: ee.Geometry, start_date: str, end_date: str) -> ee.ImageCollection:
     """
-    Extract Sentinel-1 radar data within a specified area and time range.
+    Extract Sentinel-1 GRD radar data (VV and VH, in dB) within a specified area and time range.
 
-    This function retrieves Sentinel-1 Ground Range Detected (GRD) data from the 
-    'COPERNICUS/S1_GRD' collection. The images are filtered based on the specified 
-    area of interest (AOI) and date range. The function selects polarization bands 
-    suitable for analysis: Vertical-Vertical (VV) and Vertical-Horizontal (VH) polarizations.
+    Only Interferometric Wide (IW) swath scenes that actually contain both VV and VH
+    are kept; otherwise selecting 'VH' fails on single-polarisation scenes.
 
     Parameters:
-    - aoi (ee.Geometry): Area of interest in Earth Engine Geometry format.
-    - start_date (str): Start date for data extraction in 'YYYY-MM-DD' format.
-    - end_date (str): End date for data extraction in 'YYYY-MM-DD' format.
+    - aoi (ee.Geometry): Area of interest.
+    - start_date (str): Start date, 'YYYY-MM-DD' (inclusive).
+    - end_date (str): End date, 'YYYY-MM-DD' (exclusive).
 
     Returns:
-    - ee.ImageCollection: A collection of Sentinel-1 radar images with selected polarization bands.
+    - ee.ImageCollection: Sentinel-1 images with the bands in S1_BANDS.
 
     Raises:
-    - ValueError: If no images are available for the specified parameters.
-
-    Notes:
-    - Sentinel-1 provides radar data, which is unaffected by cloud cover, making it useful 
-      for all-weather monitoring.
-    - The selected bands:
-      - VV (Vertical transmit and Vertical receive): Useful for surface water and urban mapping.
-      - VH (Vertical transmit and Horizontal receive): Sensitive to vegetation structure.
+    - ValueError: If no images match the parameters.
     """
     sentinel1 = ee.ImageCollection('COPERNICUS/S1_GRD') \
-                .filterDate(start_date, end_date) \
-                .filterBounds(aoi) \
-                .select(['VV', 'VH'])
-    
+        .filterDate(start_date, end_date) \
+        .filterBounds(aoi) \
+        .filter(ee.Filter.eq('instrumentMode', 'IW')) \
+        .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV')) \
+        .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH')) \
+        .select(S1_BANDS)
+
     if sentinel1.size().getInfo() == 0:
         raise ValueError("Sentinel-1 collection is empty. Check your date range or AOI.")
-    
-    return sentinel1
 
+    return sentinel1
